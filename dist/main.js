@@ -7,15 +7,17 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
     electron_1.app.quit();
 }
 var kioskWindow;
+var onQuit = function () {
+    if (!kioskWindow)
+        return electron_1.app.quit();
+    kioskWindow.webContents.send("PASSWORD_REQUEST");
+};
 var createWindow = function () {
     electron_1.globalShortcut.register("CmdOrCtrl+P", function () {
         kioskWindow.webContents.send("PASSWORD_REQUEST");
     });
-    electron_1.globalShortcut.register("CmdOrCtrl+Q", function () {
-        if (!kioskWindow)
-            return electron_1.app.quit();
-        kioskWindow.webContents.send("PASSWORD_REQUEST");
-    });
+    electron_1.globalShortcut.register("CmdOrCtrl+Q", onQuit);
+    electron_1.globalShortcut.register("alt+f4", onQuit);
     // Create the browser window.
     var mainWindow = new electron_1.BrowserWindow({
         height: 500,
@@ -46,6 +48,8 @@ electron_1.app.on('activate', function () {
 electron_1.ipcMain.on("OPEN_KIOSK", function (ev, data) {
     kioskWindow = new electron_1.BrowserWindow({
         kiosk: true,
+        fullscreen: true,
+        closable: true,
         webPreferences: {
             preload: path.join(__dirname, "kiosk.js")
         }
