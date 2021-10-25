@@ -7,25 +7,29 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
     electron_1.app.quit();
 }
 var kioskWindow;
+var mainWindow;
+var focusInterval;
 var onQuit = function () {
     if (!kioskWindow)
         return electron_1.app.quit();
     kioskWindow.webContents.send("PASSWORD_REQUEST");
 };
+var blankMenu = new electron_1.Menu();
+electron_1.app.applicationMenu = blankMenu;
 var createWindow = function () {
-    electron_1.globalShortcut.register("CmdOrCtrl+P", function () {
-        kioskWindow.webContents.send("PASSWORD_REQUEST");
+    ["CmdOrCtrl+P", "CmdOrCtrl+Q", "Alt+Tab"].forEach(function (shortcut) {
+        electron_1.globalShortcut.register(shortcut, onQuit);
     });
-    electron_1.globalShortcut.register("CmdOrCtrl+Q", onQuit);
-    electron_1.globalShortcut.register("alt+f4", onQuit);
     // Create the browser window.
-    var mainWindow = new electron_1.BrowserWindow({
-        height: 500,
+    mainWindow = new electron_1.BrowserWindow({
+        height: 550,
         width: 600,
         webPreferences: {
             preload: path.join(__dirname, "preload.js")
         }
     });
+    mainWindow.setMenu(blankMenu);
+    mainWindow.setMenuBarVisibility(false);
     // and load the index.html of the app.
     mainWindow.loadFile(path.join(__dirname, '../src/loader.html'));
     // Open <a/> tags in browser
@@ -49,11 +53,13 @@ electron_1.ipcMain.on("OPEN_KIOSK", function (ev, data) {
     kioskWindow = new electron_1.BrowserWindow({
         kiosk: true,
         fullscreen: true,
-        closable: true,
+        closable: false,
         webPreferences: {
             preload: path.join(__dirname, "kiosk.js")
         }
     });
+    kioskWindow.setMenu(blankMenu);
+    kioskWindow.setMenuBarVisibility(false);
     kioskWindow.loadFile(data.path);
     kioskWindow.webContents.on("will-navigate", function (e, url) {
         e.preventDefault();
@@ -62,18 +68,31 @@ electron_1.ipcMain.on("OPEN_KIOSK", function (ev, data) {
     });
     // https://github.com/electron/electron/issues/18207
     kioskWindow.on("blur", function () {
-        kioskWindow.hide();
-        kioskWindow.setKiosk(false);
-        kioskWindow.moveTop();
-        kioskWindow.focus();
-        kioskWindow.setKiosk(true);
-        kioskWindow.show();
         kioskWindow.focus();
     });
+    // Disables Alt+F4
+    kioskWindow.on("close", function (ev) {
+        ev.preventDefault();
+    });
+    // This is so f*kin dirty. This is basically malware.
+    focusInterval = setInterval(function (win) {
+        var focused = win.isFocused();
+        console.log(focused);
+        if (focused)
+            return;
+        win.restore();
+        win.moveTop();
+        win.focus();
+    }, 500, kioskWindow);
 });
-electron_1.ipcMain.on("CLOSE_KIOSK", function (ev) {
+electron_1.ipcMain.on("CLOSE_KIOSK", function () {
     if (kioskWindow) {
-        electron_1.app.quit();
+        kioskWindow.destroy();
+    }
+    if (focusInterval) {
+        {
+            clearInterval(focusInterval);
+        }
     }
 });
 //# sourceMappingURL=main.js.map

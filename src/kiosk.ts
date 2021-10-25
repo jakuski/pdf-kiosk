@@ -107,6 +107,8 @@ function sleep(ms: number): Promise<void> {
 		return createModal("Input password to exit kiosk.", innerModal, (ev) => {
 			ev.preventDefault();
 
+
+
 			const input = document.getElementById("password-input") as HTMLInputElement;
 			if (input.value === password) {
 				ipcRenderer.send("CLOSE_KIOSK")

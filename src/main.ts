@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain, Menu, MenuItem, globalShortcut } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Menu, globalShortcut } from 'electron';
 import * as path from 'path';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -6,7 +6,11 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
   app.quit();
 }
 
+const blankMenu = new Menu();
+app.applicationMenu = blankMenu;
+
 let kioskWindow: BrowserWindow;
+let mainWindow: BrowserWindow;
 
 const onQuit = () => {
   if (!kioskWindow) return app.quit();
@@ -14,21 +18,24 @@ const onQuit = () => {
 }
 
 const createWindow = (): void => {
-  globalShortcut.register("CmdOrCtrl+P", () => {
-    kioskWindow.webContents.send("PASSWORD_REQUEST")
-  });
-
-  globalShortcut.register("CmdOrCtrl+Q", onQuit);
-  globalShortcut.register("alt+f4", onQuit);
+  [
+    "CmdOrCtrl+P", // Cross platform way of opening password modal.
+    "CmdOrCtrl+Q" // MacOS quit window shortcut.
+  ].forEach(shortcut => {
+    globalShortcut.register(shortcut, onQuit);
+  })
 
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    height: 500,
+  mainWindow = new BrowserWindow({
+    height: 550,
     width: 600,
     webPreferences: {
       preload: path.join(__dirname, "preload.js")
     }
   });
+
+  mainWindow.setMenu(blankMenu);
+  mainWindow.setMenuBarVisibility(false);
 
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, '../src/loader.html'));
@@ -60,11 +67,14 @@ ipcMain.on("OPEN_KIOSK", (ev, data: KioskTypes.OpenObject) => {
   kioskWindow = new BrowserWindow({
     kiosk: true,
     fullscreen: true,
-    closable: true,
+    closable: false,
     webPreferences: {
       preload: path.join(__dirname, "kiosk.js")
     }
   });
+
+  kioskWindow.setMenu(blankMenu);
+  kioskWindow.setMenuBarVisibility(false);
 
   kioskWindow.loadFile(data.path);
 
@@ -77,18 +87,17 @@ ipcMain.on("OPEN_KIOSK", (ev, data: KioskTypes.OpenObject) => {
 
   // https://github.com/electron/electron/issues/18207
   kioskWindow.on("blur", () => {
-    kioskWindow.hide();
-    kioskWindow.setKiosk(false);
-    kioskWindow.moveTop();
     kioskWindow.focus();
-    kioskWindow.setKiosk(true);
-    kioskWindow.show();
-    kioskWindow.focus();
-  })
+  });
+
+  // Disables Alt+F4
+  kioskWindow.on("close", ev => {
+    ev.preventDefault();
+  });
 });
 
-ipcMain.on("CLOSE_KIOSK", (ev) => {
+ipcMain.on("CLOSE_KIOSK", () => {
   if (kioskWindow) {
-    app.quit();
+    kioskWindow.destroy();
   }
 });
