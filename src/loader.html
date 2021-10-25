@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>PDF Kiosk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+  <h2>PDF Kiosk</h2>
+  <form id="form">
+    <hr />
+      <label for="file">1. Choose the PDF file to be displayed.</label>
+      <input required name="file" id="file" type="file" accept=".pdf">
+    <hr />
+      <label for="password">2. Type in your unlock password. <b>Do not</b> use your bank or anything else that's sensitive password, it is stored in <a target="_blank" href="https://plaintextoffenders.com/about/" rel="noreferrer noopener">plain text</a>.</label>
+      <input required minlength="2" name="password" id="password" type="password">
+      <button id="password-visibility">Toggle password visibility</button>
+      <div>
+        
+        <label for="save_password">
+          <input type="checkbox" id="save_password" name="save_password">
+          Remember password for next use.</label>
+      </div>
+    <hr />
+      <b>Important</b> <br />
+      The default commands to exit (Cmd+Q) have been disabled. To quit the kiosk mode, you will need to hit EDIT WITH SHORTCUT
+    <hr />
+      <button id="submit" type="submit">Open Kiosk</button>
+      <button type="reset">Clear</button>
+  </form>
+  <script src="../dist/loader.js"></script>
+</body>
+
+</html>
