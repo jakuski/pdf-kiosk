@@ -5,12 +5,10 @@
     var passwordInput = $("password");
     var passwordVisbilityButton = $("password-visibility");
     var submitButton = $("submit");
-    var savePasswordCheckbox = $("save_password");
     // Password Cache
     var storedPassword = localStorage.getItem(passwordStorageKey);
     if (storedPassword) {
         passwordInput.value = storedPassword;
-        savePasswordCheckbox.value = "on";
     }
     // Password Visbility
     passwordVisbilityButton.addEventListener("click", function (ev) {
@@ -30,9 +28,7 @@
             path: data.get("file").path,
             password: data.get("password")
         };
-        if (data.get("save_password") === "on") {
-            localStorage.setItem(passwordStorageKey, submitData.password);
-        }
+        localStorage.setItem(passwordStorageKey, submitData.password);
         kiosk_app.show(submitData);
     });
 })(document.getElementById.bind(document));

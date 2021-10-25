@@ -6,7 +6,16 @@ var path = require("path");
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
     electron_1.app.quit();
 }
+var kioskWindow;
 var createWindow = function () {
+    electron_1.globalShortcut.register("CmdOrCtrl+P", function () {
+        kioskWindow.webContents.send("PASSWORD_REQUEST");
+    });
+    electron_1.globalShortcut.register("CmdOrCtrl+Q", function () {
+        if (!kioskWindow)
+            return electron_1.app.quit();
+        kioskWindow.webContents.send("PASSWORD_REQUEST");
+    });
     // Create the browser window.
     var mainWindow = new electron_1.BrowserWindow({
         height: 500,
@@ -35,12 +44,32 @@ electron_1.app.on('activate', function () {
     }
 });
 electron_1.ipcMain.on("OPEN_KIOSK", function (ev, data) {
-    var kioskWindow = new electron_1.BrowserWindow({
-        kiosk: false,
+    kioskWindow = new electron_1.BrowserWindow({
+        kiosk: true,
         webPreferences: {
             preload: path.join(__dirname, "kiosk.js")
         }
     });
     kioskWindow.loadFile(data.path);
+    kioskWindow.webContents.on("will-navigate", function (e, url) {
+        e.preventDefault();
+        console.log(url);
+        kioskWindow.webContents.send("EXTERNAL_URL_NOT_PERMITTED");
+    });
+    // https://github.com/electron/electron/issues/18207
+    kioskWindow.on("blur", function () {
+        kioskWindow.hide();
+        kioskWindow.setKiosk(false);
+        kioskWindow.moveTop();
+        kioskWindow.focus();
+        kioskWindow.setKiosk(true);
+        kioskWindow.show();
+        kioskWindow.focus();
+    });
+});
+electron_1.ipcMain.on("CLOSE_KIOSK", function (ev) {
+    if (kioskWindow) {
+        electron_1.app.quit();
+    }
 });
 //# sourceMappingURL=main.js.map

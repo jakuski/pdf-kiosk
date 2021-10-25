@@ -6,14 +6,11 @@
 	const passwordInput = $<HTMLInputElement>("password");
 	const passwordVisbilityButton = $<HTMLButtonElement>("password-visibility");
 	const submitButton = $<HTMLButtonElement>("submit");
-	const savePasswordCheckbox = $<HTMLInputElement>("save_password")
 
 	// Password Cache
 	const storedPassword = localStorage.getItem(passwordStorageKey);
 	if (storedPassword) {
 		passwordInput.value = storedPassword;
-		savePasswordCheckbox.value = "on";
-
 	}
 
 	// Password Visbility
@@ -38,9 +35,7 @@
 			password: data.get("password") as string
 		}
 
-		if (data.get("save_password") === "on") {
-			localStorage.setItem(passwordStorageKey, submitData.password);
-		}
+		localStorage.setItem(passwordStorageKey, submitData.password);
 
 		kiosk_app.show(submitData);
 	});
